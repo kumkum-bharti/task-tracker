@@ -55,7 +55,7 @@ router.post('/', requireManager, async (req, res) => {
         key,
         name,
         description,
-        ownerId: parseInt(ownerId)
+        ownerId: ownerId ? parseInt(ownerId) : req.user.id
       }
     });
 
