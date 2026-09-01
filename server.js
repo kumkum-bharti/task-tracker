@@ -1,6 +1,8 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import authRoutes from './src/routes/auth.js'
+import projectRoutes from './src/routes/projects.js'
 
 dotenv.config()
 
@@ -11,6 +13,9 @@ app.use(express.json())
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' })
 })
+
+app.use('/api/auth', authRoutes)
+app.use('/api/projects', projectRoutes)
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
