@@ -1,0 +1,150 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  MANAGER
+  MEMBER
+}
+
+enum TaskStatus {
+  BACKLOG
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  BLOCKED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(MEMBER)
+  createdAt    DateTime @default(now())
+
+  ownedProjects   Project[]        @relation("ProjectOwner")
+  projectMembers  ProjectMember[]
+  createdTasks    Task[]           @relation("TaskCreator")
+  taskAssignees   TaskAssignee[]
+  taskEvents      TaskEvent[]
+  alertDismissals AlertDismissal[]
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  key         String   @unique
+  name        String
+  description String?
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner   User            @relation("ProjectOwner", fields: [ownerId], references: [id])
+  ownerId Int
+  members ProjectMember[]
+  tasks   Task[]
+
+  @@index([ownerId])
+}
+
+model ProjectMember {
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  joinedAt  DateTime @default(now())
+
+  @@id([projectId, userId])
+}
+
+model Task {
+  id          Int         @id @default(autoincrement())
+  title       String
+  description String?
+  priority    Priority    @default(MEDIUM)
+  status      TaskStatus  @default(BACKLOG)
+  blockedFrom TaskStatus?
+  dueDate     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+
+  createdBy   User @relation("TaskCreator", fields: [createdById], references: [id])
+  createdById Int
+
+  assignees TaskAssignee[]
+  blockedBy TaskBlocker[]    @relation("BlockedTask")
+  blocking  TaskBlocker[]    @relation("BlockingTask")
+  events    TaskEvent[]
+  alerts    AlertDismissal[]
+
+  @@index([projectId])
+  @@index([createdById])
+  @@index([status])
+}
+
+model TaskBlocker {
+  blockedTask    Task @relation("BlockedTask", fields: [blockedTaskId], references: [id], onDelete: Cascade)
+  blockedTaskId  Int
+  blockingTask   Task @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+  blockingTaskId Int
+
+  @@id([blockedTaskId, blockingTaskId])
+}
+
+model TaskAssignee {
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  assignedAt DateTime @default(now())
+
+  @@id([taskId, userId])
+}
+
+model TaskEvent {
+  id          Int      @id @default(autoincrement())
+  eventType   String
+  fieldName   String?
+  oldValue    String?
+  newValue    String?
+  commentText String?
+  createdAt   DateTime @default(now())
+
+  task    Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId  Int
+  actor   User @relation(fields: [actorId], references: [id])
+  actorId Int
+
+  @@index([taskId])
+  @@index([actorId])
+}
+
+model AlertDismissal {
+  id                 Int      @id @default(autoincrement())
+  dismissedAt        DateTime @default(now())
+  dueDateAtDismissal DateTime
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  @@unique([taskId, userId])
+}
