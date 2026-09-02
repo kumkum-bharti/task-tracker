@@ -4,6 +4,9 @@ import dotenv from 'dotenv'
 import authRoutes from './src/routes/auth.js'
 import projectRoutes from './src/routes/projects.js'
 import taskRoutes from './src/routes/tasks.js'
+import bulkRoutes from './src/routes/bulk.js'
+import dashboardRoutes from './src/routes/dashboard.js'
+import alertRoutes from './src/routes/alerts.js'
 
 dotenv.config()
 
@@ -18,10 +21,13 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes)
 app.use('/api/projects', projectRoutes)
 app.use('/api/tasks', taskRoutes)
+app.use('/api', bulkRoutes)
+app.use('/api/dashboard', dashboardRoutes)
+app.use('/api/alerts', alertRoutes)
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
-  res.status(err.status || 500).json({ error: err.message || 'Internal server error' })
+  res.status(err.status || 500).json({ error: err.message || 'Internal Server Error' })
 })
 
 const PORT = process.env.PORT || 3000
