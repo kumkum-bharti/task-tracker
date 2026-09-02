@@ -3,15 +3,16 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
 
-// Simple placeholder components for routing
-const Login = () => <div>Login Page</div>;
-const Register = () => <div>Register Page</div>;
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
-const ProjectsList = () => <div>Projects</div>;
+import ProjectsList from './pages/ProjectsList';
 import ProjectBoard from './pages/ProjectBoard';
-
-const MyTasks = () => <div>My Tasks</div>;
+import MyTasks from './pages/MyTasks';
+import TaskSearch from './pages/TaskSearch';
 import Alerts from './pages/Alerts';
+
+import ErrorBoundary from './components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -19,7 +20,7 @@ const ProtectedRoute = ({ children }) => {
   if (loading) return <div>Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
   
-  return children;
+  return <ErrorBoundary>{children}</ErrorBoundary>;
 };
 
 function AppRoutes() {
@@ -39,6 +40,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/projects" element={<ProjectsList />} />
           <Route path="/projects/:projectId" element={<ProjectBoard />} />
+          <Route path="/tasks" element={<TaskSearch />} />
           <Route path="/my-tasks" element={<MyTasks />} />
           <Route path="/alerts" element={<Alerts />} />
         </Route>

@@ -6,8 +6,19 @@ export const LEGAL_TRANSITIONS = {
   DONE: ['IN_PROGRESS']
 };
 
-export function validateTransition(from, to) {
+export function validateTransition(from, to, blockedFrom = null) {
   if (from === to) {
+    return { valid: true };
+  }
+
+  if (from === 'BLOCKED') {
+    const targetState = blockedFrom || 'IN_PROGRESS';
+    if (to !== targetState) {
+      return {
+        valid: false,
+        reason: `Task was blocked from ${targetState.replace('_', ' ')}. Unblocking must return it to ${targetState.replace('_', ' ')}.`
+      };
+    }
     return { valid: true };
   }
 
@@ -30,7 +41,7 @@ export function validateTransition(from, to) {
 
   return { 
     valid: false, 
-    reason: `Cannot move from ${from} to ${to}. Allowed moves are: ${allowedMoves.join(', ')}.` 
+    reason: `Cannot move from ${from.replace('_', ' ')} to ${to.replace('_', ' ')}. Allowed moves are: ${allowedMoves.map(m => m.replace('_', ' ')).join(', ')}.` 
   };
 }
 

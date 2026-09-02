@@ -16,18 +16,18 @@
   margin-bottom: 32px;
 }
 .metric-card {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--social-bg);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
 }
 @media (prefers-color-scheme: dark) {
   .metric-card {
-    background: rgba(46, 48, 58, 0.4);
+    background: rgba(21, 28, 44, 0.6);
   }
 }
 .metric-title {
@@ -42,7 +42,7 @@
   color: var(--text-h);
 }
 .metric-warning {
-  color: #dc2626;
+  color: #ef4444;
 }
 @media (prefers-color-scheme: dark) {
   .metric-warning {
@@ -62,16 +62,16 @@
   }
 }
 .chart-card {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--social-bg);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow);
 }
 @media (prefers-color-scheme: dark) {
   .chart-card {
-    background: rgba(46, 48, 58, 0.4);
+    background: rgba(21, 28, 44, 0.6);
   }
 }
 .chart-title {
@@ -82,17 +82,17 @@
 }
 
 .table-container {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--social-bg);
   backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow);
   overflow-x: auto;
 }
 @media (prefers-color-scheme: dark) {
   .table-container {
-    background: rgba(46, 48, 58, 0.4);
+    background: rgba(21, 28, 44, 0.6);
   }
 }
 .workload-table {

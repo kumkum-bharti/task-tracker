@@ -2,7 +2,7 @@ import express from 'express';
 import prisma from '../lib/prisma.js';
 import { authenticate, requireManager } from '../middleware/auth.js';
 import { Parser } from 'json2csv';
-import { logStatusChange } from '../lib/auditLogger.js';
+import { logStatusChange, logAssigned, logFieldChange } from '../lib/auditLogger.js';
 import { validateTransition, getBlockedFrom } from '../lib/stateMachine.js';
 
 const router = express.Router();
@@ -16,17 +16,17 @@ async function checkProjectAccess(projectId, user) {
   return !!member;
 }
 
-// ENDPOINT 1: PATCH /tasks/bulk-status
-router.patch('/tasks/bulk-status', async (req, res) => {
+// ENDPOINT 1: PATCH /tasks/bulk-update (Unified Bulk Status, Assignee, Due Date updates with per-task reporting)
+router.patch('/tasks/bulk-update', async (req, res) => {
   try {
-    const { taskIds, newStatus } = req.body;
+    const { taskIds, actionType, value } = req.body;
+    
     if (!Array.isArray(taskIds) || taskIds.length === 0) {
       return res.status(400).json({ error: "taskIds must be a non-empty array" });
     }
-    
-    const validStatuses = ['BACKLOG', 'IN_PROGRESS', 'IN_REVIEW', 'BLOCKED', 'DONE'];
-    if (!validStatuses.includes(newStatus)) {
-        return res.status(400).json({ error: "Invalid newStatus" });
+
+    if (!['status', 'assignee', 'dueDate'].includes(actionType)) {
+      return res.status(400).json({ error: "actionType must be one of: status, assignee, dueDate" });
     }
 
     const updatedIds = [];
@@ -35,18 +35,15 @@ router.patch('/tasks/bulk-status', async (req, res) => {
     const tasks = await prisma.task.findMany({
       where: { id: { in: taskIds } },
       include: {
-        blockedBy: {
-          include: { blockingTask: true }
-        }
+        project: { select: { name: true, key: true } },
+        blockedBy: { include: { blockingTask: true } }
       }
     });
-
-    const tasksToUpdate = [];
 
     for (const id of taskIds) {
       const task = tasks.find(t => t.id === id);
       if (!task) {
-        failed.push({ id, reason: "Task not found" });
+        failed.push({ id, title: `Task #${id}`, reason: "Task not found" });
         continue;
       }
 
@@ -54,35 +51,35 @@ router.patch('/tasks/bulk-status', async (req, res) => {
       if (req.user.role !== 'MANAGER') {
         const hasAccess = await checkProjectAccess(task.projectId, req.user);
         if (!hasAccess) {
-          failed.push({ id, reason: "Access denied" });
+          failed.push({ id: task.id, title: task.title, reason: "Access denied to project" });
           continue;
         }
       }
 
-      // State machine
-      const validation = validateTransition(task.status, newStatus);
-      if (!validation.valid) {
-        failed.push({ id, reason: validation.reason });
-        continue;
-      }
+      try {
+        if (actionType === 'status') {
+          const newStatus = value;
+          const validStatuses = ['BACKLOG', 'IN_PROGRESS', 'IN_REVIEW', 'BLOCKED', 'DONE'];
+          if (!validStatuses.includes(newStatus)) {
+            failed.push({ id: task.id, title: task.title, reason: `Invalid status: ${newStatus}` });
+            continue;
+          }
 
-      if (newStatus === 'DONE') {
-        const unfinishedBlockers = task.blockedBy.filter(
-          b => b.blockingTask.status !== 'DONE'
-        );
-        if (unfinishedBlockers.length > 0) {
-          const blockerIds = unfinishedBlockers.map(b => b.blockingTaskId).join(', ');
-          failed.push({ id, reason: `Cannot complete task because blocking tasks are not DONE: ${blockerIds}` });
-          continue;
-        }
-      }
+          const validation = validateTransition(task.status, newStatus, task.blockedFrom);
+          if (!validation.valid) {
+            failed.push({ id: task.id, title: task.title, reason: validation.reason });
+            continue;
+          }
 
-      tasksToUpdate.push(task);
-    }
+          if (newStatus === 'DONE') {
+            const unfinishedBlockers = task.blockedBy.filter(b => b.blockingTask.status !== 'DONE');
+            if (unfinishedBlockers.length > 0) {
+              const blockerIds = unfinishedBlockers.map(b => b.blockingTaskId).join(', ');
+              failed.push({ id: task.id, title: task.title, reason: `Cannot complete task because blocking tasks are not DONE: #${blockerIds}` });
+              continue;
+            }
+          }
 
-    if (tasksToUpdate.length > 0) {
-      await prisma.$transaction(async (tx) => {
-        for (const task of tasksToUpdate) {
           let blockedFrom = task.blockedFrom;
           if (newStatus === 'BLOCKED') {
             blockedFrom = getBlockedFrom(task.status);
@@ -90,18 +87,62 @@ router.patch('/tasks/bulk-status', async (req, res) => {
             blockedFrom = null;
           }
 
-          await tx.task.update({
+          await prisma.task.update({
             where: { id: task.id },
             data: { status: newStatus, blockedFrom }
           });
-          
+
+          await logStatusChange(prisma, task.id, req.user.id, task.status, newStatus);
+          updatedIds.push(task.id);
+        } 
+        else if (actionType === 'assignee') {
+          const userId = parseInt(value);
+          if (isNaN(userId)) {
+            failed.push({ id: task.id, title: task.title, reason: "Invalid assignee user ID" });
+            continue;
+          }
+
+          // Verify target user belongs to the project
+          const isMember = await prisma.projectMember.findUnique({
+            where: { projectId_userId: { projectId: task.projectId, userId } }
+          });
+
+          if (!isMember) {
+            failed.push({ id: task.id, title: task.title, reason: `Target user is not a member of project ${task.project?.name || ''}` });
+            continue;
+          }
+
+          // Assign if not assigned
+          const existing = await prisma.taskAssignee.findUnique({
+            where: { taskId_userId: { taskId: task.id, userId } }
+          });
+
+          if (!existing) {
+            await prisma.taskAssignee.create({
+              data: { taskId: task.id, userId }
+            });
+            await logAssigned(prisma, task.id, req.user.id, userId);
+          }
           updatedIds.push(task.id);
         }
-      });
+        else if (actionType === 'dueDate') {
+          const parsedDueDate = value ? new Date(value) : null;
+          const oldDueStr = task.dueDate ? task.dueDate.toISOString() : null;
+          const newDueStr = parsedDueDate ? parsedDueDate.toISOString() : null;
 
-      // After transaction, log changes
-      for (const task of tasksToUpdate) {
-        await logStatusChange(prisma, task.id, req.user.id, task.status, newStatus);
+          await prisma.task.update({
+            where: { id: task.id },
+            data: { dueDate: parsedDueDate }
+          });
+
+          if (oldDueStr !== newDueStr) {
+            await logFieldChange(prisma, task.id, req.user.id, 'dueDate', oldDueStr, newDueStr);
+            await prisma.alertDismissal.deleteMany({ where: { taskId: task.id } });
+          }
+          updatedIds.push(task.id);
+        }
+      } catch (err) {
+        failed.push({ id: task.id, title: task.title, reason: err.message || "Failed to update" });
       }
     }
 
@@ -110,14 +151,20 @@ router.patch('/tasks/bulk-status', async (req, res) => {
       updatedIds,
       failed
     });
-
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-// ENDPOINT 2: POST /tasks/bulk-delete
+// ENDPOINT 2: PATCH /tasks/bulk-status (Legacy endpoint for backwards compatibility)
+router.patch('/tasks/bulk-status', async (req, res) => {
+  req.body.actionType = 'status';
+  req.body.value = req.body.newStatus;
+  return router.handle(req, res);
+});
+
+// ENDPOINT 3: POST /tasks/bulk-delete
 router.post('/tasks/bulk-delete', requireManager, async (req, res) => {
   try {
     const { taskIds } = req.body;
@@ -128,7 +175,6 @@ router.post('/tasks/bulk-delete', requireManager, async (req, res) => {
     let deletedCount = 0;
 
     await prisma.$transaction(async (tx) => {
-      // Find actual existing tasks
       const existingTasks = await tx.task.findMany({
         where: { id: { in: taskIds } },
         select: { id: true }
@@ -137,8 +183,6 @@ router.post('/tasks/bulk-delete', requireManager, async (req, res) => {
       
       if (validIds.length > 0) {
         deletedCount = validIds.length;
-        
-        // Delete related records
         await tx.taskAssignee.deleteMany({ where: { taskId: { in: validIds } } });
         await tx.taskBlocker.deleteMany({ 
           where: { 
@@ -161,12 +205,78 @@ router.post('/tasks/bulk-delete', requireManager, async (req, res) => {
   }
 });
 
-// ENDPOINT 3: GET /projects/:projectId/export-csv
+// ENDPOINT 4: GET /tasks/export-csv (Filtered Task Search CSV Export)
+router.get('/tasks/export-csv', async (req, res) => {
+  try {
+    const { search, projectId, status, assigneeId, priority, overdue } = req.query;
+
+    const where = {};
+
+    if (req.user.role !== 'MANAGER') {
+      where.project = {
+        members: { some: { userId: req.user.id } }
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    if (projectId) where.projectId = parseInt(projectId);
+    if (status) where.status = status;
+    if (priority) where.priority = priority;
+    if (assigneeId) where.assignees = { some: { userId: parseInt(assigneeId) } };
+    if (overdue === 'true') {
+      where.dueDate = { lt: new Date() };
+      where.status = { not: 'DONE' };
+    }
+
+    const tasks = await prisma.task.findMany({
+      where,
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        project: { select: { key: true, name: true } },
+        createdBy: { select: { name: true } },
+        assignees: { include: { user: { select: { name: true } } } }
+      }
+    });
+
+    const csvData = tasks.map(t => ({
+      id: t.id,
+      projectKey: t.project?.key || '',
+      projectName: t.project?.name || '',
+      title: t.title,
+      description: t.description || '',
+      status: t.status,
+      priority: t.priority,
+      dueDate: t.dueDate ? t.dueDate.toISOString() : '',
+      createdBy: t.createdBy?.name || '',
+      assignees: t.assignees.map(a => a.user?.name || '').filter(Boolean).join(', '),
+      createdAt: t.createdAt.toISOString()
+    }));
+
+    const fields = ['id', 'projectKey', 'projectName', 'title', 'description', 'status', 'priority', 'dueDate', 'createdBy', 'assignees', 'createdAt'];
+    const json2csvParser = new Parser({ fields });
+    const csv = json2csvParser.parse(csvData);
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="filtered-tasks.csv"');
+    return res.status(200).send(csv);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ENDPOINT 5: GET /projects/:projectId/export-csv (Project specific CSV export)
 router.get('/projects/:projectId/export-csv', async (req, res) => {
   try {
     const projectId = parseInt(req.params.projectId);
     if (isNaN(projectId)) {
-        return res.status(400).json({ error: "Invalid projectId" });
+      return res.status(400).json({ error: "Invalid projectId" });
     }
 
     const hasAccess = await checkProjectAccess(projectId, req.user);
@@ -179,9 +289,7 @@ router.get('/projects/:projectId/export-csv', async (req, res) => {
       include: {
         project: { select: { key: true, name: true } },
         createdBy: { select: { name: true } },
-        assignees: {
-          include: { user: { select: { name: true } } }
-        }
+        assignees: { include: { user: { select: { name: true } } } }
       }
     });
 
@@ -194,7 +302,7 @@ router.get('/projects/:projectId/export-csv', async (req, res) => {
       priority: t.priority,
       dueDate: t.dueDate ? t.dueDate.toISOString() : '',
       createdBy: t.createdBy?.name || '',
-      assignees: t.assignees.map(a => a.user.name).join(', '),
+      assignees: t.assignees.map(a => a.user?.name || '').filter(Boolean).join(', '),
       createdAt: t.createdAt.toISOString()
     }));
 

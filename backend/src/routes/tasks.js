@@ -196,7 +196,7 @@ router.patch('/:id/status', async (req, res) => {
     const { newStatus } = req.body;
     if (!newStatus) return res.status(400).json({ error: "newStatus is required" });
 
-    const validation = validateTransition(task.status, newStatus);
+    const validation = validateTransition(task.status, newStatus, task.blockedFrom);
     if (!validation.valid) {
       return res.status(400).json({ error: validation.reason });
     }
@@ -277,8 +277,8 @@ router.delete('/:id/assignees/:userId', async (req, res) => {
     const task = await checkTaskAccess(taskId, req.user);
     if (!task) return res.status(403).json({ error: "Access denied or task not found" });
 
-    await prisma.taskAssignee.delete({
-      where: { taskId_userId: { taskId, userId } }
+    await prisma.taskAssignee.deleteMany({
+      where: { taskId, userId }
     });
 
     await logUnassigned(prisma, taskId, req.user.id, userId);
@@ -386,8 +386,9 @@ router.get('/', async (req, res) => {
         skip,
         take: limitNum,
         include: {
-          project: { select: { name: true } },
-          assignees: { include: { user: { select: { name: true } } } }
+          project: { select: { id: true, name: true, key: true } },
+          assignees: { include: { user: { select: { id: true, name: true, email: true } } } },
+          blockedBy: { include: { blockingTask: true } }
         }
       }),
       prisma.task.count({ where })

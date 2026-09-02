@@ -7,6 +7,7 @@ import taskRoutes from './src/routes/tasks.js'
 import bulkRoutes from './src/routes/bulk.js'
 import dashboardRoutes from './src/routes/dashboard.js'
 import alertRoutes from './src/routes/alerts.js'
+import userRoutes from './src/routes/users.js'
 
 dotenv.config()
 
@@ -30,6 +31,7 @@ app.use('/api', bulkRoutes)
 app.use('/api/tasks', taskRoutes)
 app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/alerts', alertRoutes)
+app.use('/api/users', userRoutes)
 
 app.use((err, req, res, next) => {
   console.error(err.stack)

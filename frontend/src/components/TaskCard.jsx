@@ -24,15 +24,21 @@ export default function TaskCard({ task, onUpdate, onError, onClick }) {
   const blockers = task.blockedBy || [];
   const hasUnfinishedBlockers = blockers.some(b => b.blockingTask.status !== 'DONE');
 
-  const validNextStatuses = {
-    'BACKLOG': ['IN_PROGRESS'],
-    'IN_PROGRESS': ['IN_REVIEW', 'BLOCKED'],
-    'IN_REVIEW': ['DONE', 'BLOCKED'],
-    'BLOCKED': ['IN_PROGRESS', 'IN_REVIEW'],
-    'DONE': ['IN_PROGRESS']
+  const getOptions = () => {
+    if (task.status === 'BLOCKED') {
+      const returnStatus = task.blockedFrom || 'IN_PROGRESS';
+      return [returnStatus];
+    }
+    const validNextStatuses = {
+      'BACKLOG': ['IN_PROGRESS'],
+      'IN_PROGRESS': ['IN_REVIEW', 'BLOCKED'],
+      'IN_REVIEW': ['DONE', 'BLOCKED'],
+      'DONE': ['IN_PROGRESS']
+    };
+    return validNextStatuses[task.status] || [];
   };
   
-  const options = validNextStatuses[task.status] || [];
+  const options = getOptions();
 
   return (
     <div className="task-card" onClick={() => onClick(task)}>
@@ -64,7 +70,7 @@ export default function TaskCard({ task, onUpdate, onError, onClick }) {
       </div>
       {task.assignees && task.assignees.length > 0 && (
         <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text)' }}>
-          {task.assignees.map(a => a.user.name).join(', ')}
+          {task.assignees.map(a => a.user?.name || 'Unknown').join(', ')}
         </div>
       )}
     </div>

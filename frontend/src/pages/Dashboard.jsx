@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import client from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -14,13 +13,6 @@ const STATUS_COLORS = {
   IN_REVIEW: '#8b5cf6',
   DONE: '#10b981',
   BLOCKED: '#ef4444'
-};
-
-const PRIORITY_COLORS = {
-  LOW: '#6366f1',
-  MEDIUM: '#f59e0b',
-  HIGH: '#ef4444',
-  URGENT: '#991b1b'
 };
 
 export default function Dashboard() {
@@ -66,32 +58,23 @@ export default function Dashboard() {
   if (error) return <div style={{ padding: '40px', color: 'red' }}>{error}</div>;
 
   // Prepare data for Recharts
-  const statusData = Object.entries(summary.statusDistribution).map(([key, value]) => ({
+  const statusData = Object.entries(summary.statusDistribution || {}).map(([key, value]) => ({
     name: key.replace('_', ' '),
     value,
     color: STATUS_COLORS[key] || '#cccccc'
   }));
 
-  const priorityData = Object.entries(summary.priorityDistribution).map(([key, value]) => ({
-    name: key,
-    tasks: value,
-    fill: PRIORITY_COLORS[key] || '#cccccc'
-  }));
-
-  const blockedCount = summary.statusDistribution['BLOCKED'] || 0;
+  const completionsData = summary.completionsLastEightWeeks || [];
 
   return (
     <div className="dashboard-container">
       <h1 className="dashboard-title">Manager Dashboard</h1>
       
+      {/* 4 Headline Metrics Cards (Requirement 8) */}
       <div className="metrics-grid">
         <div className="metric-card">
-          <div className="metric-title">Active Projects</div>
-          <div className="metric-value">{summary.totalProjects}</div>
-        </div>
-        <div className="metric-card">
-          <div className="metric-title">Total Tasks</div>
-          <div className="metric-value">{summary.totalTasks}</div>
+          <div className="metric-title">Open Tasks</div>
+          <div className="metric-value">{summary.openTasks}</div>
         </div>
         <div className="metric-card">
           <div className="metric-title">Overdue Tasks</div>
@@ -100,16 +83,22 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-title">Bottlenecks (Blocked)</div>
-          <div className={`metric-value ${blockedCount > 0 ? 'metric-warning' : ''}`}>
-            {blockedCount}
+          <div className="metric-title">Due This Week</div>
+          <div className="metric-value">{summary.dueThisWeek}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-title">Completed This Week</div>
+          <div className="metric-value" style={{ color: '#10b981' }}>
+            {summary.completedThisWeek}
           </div>
         </div>
       </div>
 
+      {/* Visual Charts (Requirement 8) */}
       <div className="charts-grid">
+        {/* Status Breakdown */}
         <div className="chart-card">
-          <h3 className="chart-title">Task Status Distribution</h3>
+          <h3 className="chart-title">Task Breakdown by Status</h3>
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
               <PieChart>
@@ -135,24 +124,26 @@ export default function Dashboard() {
           </div>
         </div>
         
+        {/* 8 Weeks Completions Chart */}
         <div className="chart-card">
-          <h3 className="chart-title">Priority Breakdown</h3>
+          <h3 className="chart-title">Completions (Last 8 Weeks)</h3>
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
-              <BarChart data={priorityData}>
+              <BarChart data={completionsData}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                <XAxis dataKey="name" />
+                <XAxis dataKey="week" />
                 <YAxis allowDecimals={false} />
                 <Tooltip />
-                <Bar dataKey="tasks" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="completions" fill="var(--accent)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
+      {/* Assignee Breakdown Table (Requirement 8) */}
       <div className="table-container">
-        <h3 className="chart-title" style={{ marginBottom: '24px' }}>Team Workload</h3>
+        <h3 className="chart-title" style={{ marginBottom: '24px' }}>Task Breakdown by Assignee</h3>
         <table className="workload-table">
           <thead>
             <tr>

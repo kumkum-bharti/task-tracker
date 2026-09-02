@@ -15,14 +15,49 @@ async function checkProjectAccess(projectId, user) {
 // ENDPOINT 1: GET /api/dashboard/summary
 router.get('/summary', authenticate, requireManager, async (req, res) => {
   try {
-    const totalProjects = await prisma.project.count({
-      where: { isArchived: false }
+    const now = new Date();
+    
+    // Start of current week (Sunday)
+    const startOfWeek = new Date(now);
+    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 7);
+
+    // Headline numbers
+    const openTasks = await prisma.task.count({
+      where: { 
+        status: { not: 'DONE' },
+        project: { isArchived: false }
+      }
     });
 
-    const totalTasks = await prisma.task.count({
-      where: { project: { isArchived: false } }
+    const overdueCount = await prisma.task.count({
+      where: { 
+        dueDate: { lt: now }, 
+        status: { not: 'DONE' },
+        project: { isArchived: false }
+      }
     });
 
+    const dueThisWeek = await prisma.task.count({
+      where: { 
+        dueDate: { gte: startOfWeek, lte: endOfWeek },
+        status: { not: 'DONE' },
+        project: { isArchived: false }
+      }
+    });
+
+    const completedThisWeek = await prisma.task.count({
+      where: {
+        status: 'DONE',
+        updatedAt: { gte: startOfWeek },
+        project: { isArchived: false }
+      }
+    });
+
+    // Distributions
     const statusGroup = await prisma.task.groupBy({
       by: ['status'],
       _count: { id: true },
@@ -35,21 +70,6 @@ router.get('/summary', authenticate, requireManager, async (req, res) => {
       where: { project: { isArchived: false } }
     });
 
-    const overdueCount = await prisma.task.count({
-      where: { 
-        dueDate: { lt: new Date() }, 
-        status: { not: 'DONE' },
-        project: { isArchived: false }
-      }
-    });
-
-    const blockerBottlenecks = await prisma.task.count({
-      where: { 
-        status: 'BLOCKED',
-        project: { isArchived: false }
-      }
-    });
-
     const statusDistribution = {};
     for (const g of statusGroup) {
       statusDistribution[g.status] = g._count.id;
@@ -60,12 +80,43 @@ router.get('/summary', authenticate, requireManager, async (req, res) => {
       priorityDistribution[g.priority] = g._count.id;
     }
 
+    // Chart completions over last 8 weeks
+    const eightWeeksAgo = new Date(startOfWeek);
+    eightWeeksAgo.setDate(startOfWeek.getDate() - 7 * 7);
+
+    const completedEvents = await prisma.taskEvent.findMany({
+      where: {
+        eventType: 'STATUS_CHANGED',
+        newValue: 'DONE',
+        createdAt: { gte: eightWeeksAgo }
+      },
+      select: { createdAt: true }
+    });
+
+    const completionsLastEightWeeks = [];
+    for (let i = 7; i >= 0; i--) {
+      const wStart = new Date(startOfWeek);
+      wStart.setDate(startOfWeek.getDate() - i * 7);
+      const wEnd = new Date(wStart);
+      wEnd.setDate(wStart.getDate() + 7);
+
+      const count = completedEvents.filter(e => {
+        const d = new Date(e.createdAt);
+        return d >= wStart && d < wEnd;
+      }).length;
+
+      const label = `W${8 - i}`;
+      completionsLastEightWeeks.push({ week: label, completions: count });
+    }
+
     return res.json({
-      totalProjects,
-      totalTasks,
+      openTasks,
       overdueCount,
+      dueThisWeek,
+      completedThisWeek,
       statusDistribution,
-      priorityDistribution
+      priorityDistribution,
+      completionsLastEightWeeks
     });
   } catch (error) {
     console.error(error);
@@ -105,7 +156,6 @@ router.get('/team-workload', authenticate, requireManager, async (req, res) => {
       _count: { taskId: true }
     });
 
-    // Merge the database aggregations
     let workload = members.map(user => {
       const active = activeCounts.find(c => c.userId === user.id)?._count.taskId || 0;
       const inProgress = inProgressCounts.find(c => c.userId === user.id)?._count.taskId || 0;
@@ -123,66 +173,9 @@ router.get('/team-workload', authenticate, requireManager, async (req, res) => {
       };
     });
 
-    // Order users by active task count descending
     workload.sort((a, b) => b.activeTasks - a.activeTasks);
 
     return res.json(workload);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// ENDPOINT 3: GET /api/dashboard/project-progress/:projectId
-router.get('/project-progress/:projectId', authenticate, async (req, res) => {
-  try {
-    const projectId = parseInt(req.params.projectId);
-    if (isNaN(projectId)) {
-      return res.status(400).json({ error: "Invalid projectId" });
-    }
-
-    const hasAccess = await checkProjectAccess(projectId, req.user);
-    if (!hasAccess) {
-      return res.status(403).json({ error: "Access denied to this project" });
-    }
-
-    const project = await prisma.project.findUnique({
-      where: { id: projectId }
-    });
-
-    if (!project) {
-      return res.status(404).json({ error: "Project not found" });
-    }
-
-    const totalTasks = await prisma.task.count({
-      where: { projectId }
-    });
-
-    const completedTasks = await prisma.task.count({
-      where: { projectId, status: 'DONE' }
-    });
-
-    const progressPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-    const statusGroup = await prisma.task.groupBy({
-      by: ['status'],
-      _count: { id: true },
-      where: { projectId }
-    });
-
-    const statusBreakdown = {};
-    for (const g of statusGroup) {
-      statusBreakdown[g.status] = g._count.id;
-    }
-
-    return res.json({
-      projectId: project.id,
-      projectName: project.name,
-      totalTasks,
-      completedTasks,
-      progressPercentage,
-      statusBreakdown
-    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: "Internal server error" });

@@ -1,14 +1,13 @@
-/* Kanban Board Styles */
 .kanban-board {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
 }
 
 @media (prefers-color-scheme: dark) {
   .kanban-board {
-    background: linear-gradient(135deg, #1f2028 0%, #16171d 100%);
+    background: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
   }
 }
 
@@ -17,14 +16,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 32px;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
   gap: 20px;
 }
 @media (prefers-color-scheme: dark) {
   .kanban-header {
-    background: rgba(31, 32, 40, 0.4);
+    background: rgba(15, 23, 42, 0.6);
   }
 }
 
@@ -45,9 +44,9 @@
 .kanban-badge {
   background: var(--accent-bg);
   color: var(--accent);
-  padding: 4px 8px;
+  padding: 4px 10px;
   border-radius: 12px;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   border: 1px solid var(--accent-border);
 }
@@ -64,17 +63,17 @@
   flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(16px);
   border-radius: 16px;
   border: 1px solid var(--border);
   padding: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow);
 }
 @media (prefers-color-scheme: dark) {
   .kanban-column {
-    background: rgba(46, 48, 58, 0.3);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    background: rgba(21, 28, 44, 0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
   }
 }
 

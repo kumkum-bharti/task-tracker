@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import client from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import TaskCard from '../components/TaskCard';
 import NewTaskModal from '../components/NewTaskModal';
 import TaskDetailModal from '../components/TaskDetailModal';
+import ManageMembersModal from '../components/ManageMembersModal';
+import EditProjectModal from '../components/EditProjectModal';
 import '../Kanban.css';
-import { Search, Download, Plus } from 'lucide-react';
+import { Search, Download, Plus, Users, Archive, RotateCcw, Edit2 } from 'lucide-react';
 
 const COLUMNS = ['BACKLOG', 'IN_PROGRESS', 'IN_REVIEW', 'DONE', 'BLOCKED'];
 
 export default function ProjectBoard() {
+  const { user } = useAuth();
   const { projectId } = useParams();
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -23,17 +27,25 @@ export default function ProjectBoard() {
   
   // Modals
   const [isNewTaskOpen, setIsNewTaskOpen] = useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
 
   const fetchProjectData = async () => {
     try {
-      // Assuming projectId is 1, let's fetch projects and find it
-      const projRes = await client.get('/projects');
-      const proj = projRes.data.find(p => p.id === parseInt(projectId));
+      // Fetch active & archived projects to find this project
+      const projRes = await client.get('/projects?archived=true');
+      const activeRes = await client.get('/projects');
+      const allProjects = [...projRes.data, ...activeRes.data];
+      const proj = allProjects.find(p => p.id === parseInt(projectId));
       setProject(proj);
       
       const tasksRes = await client.get(`/tasks/project/${projectId}`);
       setTasks(tasksRes.data);
+      setSelectedTask(prev => {
+        if (!prev) return null;
+        return tasksRes.data.find(t => t.id === prev.id) || prev;
+      });
       setLoading(false);
     } catch (err) {
       setError('Failed to load project data.');
@@ -60,11 +72,30 @@ export default function ProjectBoard() {
     }
   };
 
+  const handleArchiveProject = async () => {
+    if (!window.confirm('Are you sure you want to archive this project?')) return;
+    try {
+      await client.patch(`/projects/${projectId}/archive`);
+      fetchProjectData();
+    } catch (err) {
+      setError('Failed to archive project.');
+    }
+  };
+
+  const handleRestoreProject = async () => {
+    try {
+      await client.patch(`/projects/${projectId}/restore`);
+      fetchProjectData();
+    } catch (err) {
+      setError('Failed to restore project.');
+    }
+  };
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
-      const matchSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = task.title ? task.title.toLowerCase().includes(searchTerm.toLowerCase()) : false;
       const matchPriority = priorityFilter ? task.priority === priorityFilter : true;
-      const matchAssignee = assigneeFilter ? task.assignees.some(a => a.user.name === assigneeFilter) : true;
+      const matchAssignee = assigneeFilter ? task.assignees?.some(a => a.user?.name === assigneeFilter) : true;
       return matchSearch && matchPriority && matchAssignee;
     });
   }, [tasks, searchTerm, priorityFilter, assigneeFilter]);
@@ -92,9 +123,56 @@ export default function ProjectBoard() {
           <h1 className="kanban-title">
             {project?.name || 'Project Board'}
             {project?.key && <span className="kanban-badge">{project.key}</span>}
+            {project?.isArchived && (
+              <span style={{ 
+                background: 'rgba(239, 68, 68, 0.15)', 
+                color: '#ef4444', 
+                padding: '4px 10px', 
+                borderRadius: '12px', 
+                fontSize: '12px', 
+                fontWeight: 700 
+              }}>
+                ARCHIVED
+              </span>
+            )}
           </h1>
-          <div style={{ color: 'var(--text)', fontSize: '14px', marginLeft: '12px' }}>
-            {project?.members?.length || 0} Members
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+            <span style={{ color: 'var(--text)', fontSize: '14px' }}>
+              {project?.members?.length || 0} Members
+            </span>
+            {user?.role === 'MANAGER' && (
+              <>
+                <button 
+                  onClick={() => setIsEditProjectOpen(true)}
+                  style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-h)' }}
+                >
+                  <Edit2 size={14} /> Edit Project
+                </button>
+
+                <button 
+                  onClick={() => setIsMembersModalOpen(true)}
+                  style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-h)' }}
+                >
+                  <Users size={14} /> Manage
+                </button>
+
+                {project?.isArchived ? (
+                  <button 
+                    onClick={handleRestoreProject}
+                    style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent)' }}
+                  >
+                    <RotateCcw size={14} /> Restore Project
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleArchiveProject}
+                    style={{ background: 'transparent', border: '1px solid var(--border)', borderRadius: '6px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text)' }}
+                  >
+                    <Archive size={14} /> Archive
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
         <div className="kanban-header-right">
@@ -159,8 +237,29 @@ export default function ProjectBoard() {
         isOpen={!!selectedTask}
         task={selectedTask}
         onClose={() => setSelectedTask(null)}
+        onUpdate={fetchProjectData}
         onError={setError}
       />
+
+      {project && (
+        <ManageMembersModal
+          isOpen={isMembersModalOpen}
+          onClose={() => setIsMembersModalOpen(false)}
+          project={project}
+          onUpdated={fetchProjectData}
+          onError={setError}
+        />
+      )}
+
+      {project && (
+        <EditProjectModal
+          isOpen={isEditProjectOpen}
+          onClose={() => setIsEditProjectOpen(false)}
+          project={project}
+          onUpdated={fetchProjectData}
+          onError={setError}
+        />
+      )}
 
       {error && (
         <div className="toast">
