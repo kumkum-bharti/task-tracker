@@ -1,0 +1,340 @@
+/* Kanban Board Styles */
+.kanban-board {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .kanban-board {
+    background: linear-gradient(135deg, #1f2028 0%, #16171d 100%);
+  }
+}
+
+.kanban-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  gap: 20px;
+}
+@media (prefers-color-scheme: dark) {
+  .kanban-header {
+    background: rgba(31, 32, 40, 0.4);
+  }
+}
+
+.kanban-header-left, .kanban-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.kanban-title {
+  margin: 0;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kanban-badge {
+  background: var(--accent-bg);
+  color: var(--accent);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid var(--accent-border);
+}
+
+.kanban-columns {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+  padding: 24px 32px;
+  gap: 24px;
+}
+
+.kanban-column {
+  flex: 0 0 320px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+@media (prefers-color-scheme: dark) {
+  .kanban-column {
+    background: rgba(46, 48, 58, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.kanban-column-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: var(--text-h);
+}
+
+.kanban-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Task Card */
+.task-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  text-align: left;
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+.task-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.task-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-h);
+  margin: 0;
+  margin-bottom: 8px;
+  line-height: 1.3;
+  padding-right: 24px; /* Space for locker/actions */
+}
+.task-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text);
+}
+.task-priority {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.priority-HIGH { background: #fee2e2; color: #dc2626; }
+.priority-MEDIUM { background: #fef3c7; color: #d97706; }
+.priority-LOW { background: #e0e7ff; color: #4f46e5; }
+@media (prefers-color-scheme: dark) {
+  .priority-HIGH { background: rgba(220, 38, 38, 0.2); color: #fca5a5; }
+  .priority-MEDIUM { background: rgba(217, 119, 6, 0.2); color: #fcd34d; }
+  .priority-LOW { background: rgba(79, 70, 229, 0.2); color: #a5b4fc; }
+}
+
+.due-date.overdue {
+  color: #dc2626;
+  font-weight: 600;
+}
+@media (prefers-color-scheme: dark) {
+  .due-date.overdue { color: #fca5a5; }
+}
+
+/* UI Elements */
+.input-glass {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text-h);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+@media (prefers-color-scheme: dark) {
+  .input-glass {
+    background: rgba(31, 32, 40, 0.6);
+  }
+}
+.input-glass:focus {
+  border-color: var(--accent);
+  background: var(--bg);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary:hover { opacity: 0.9; }
+
+.btn-secondary {
+  background: var(--bg);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-secondary:hover { background: var(--border); }
+
+/* Dialog / Modal Transitions (Modern Web Guidance) */
+dialog {
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  max-width: 600px;
+  width: 100%;
+  
+  /* Transition setup */
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+              opacity 0.3s ease-out, 
+              display 0.3s allow-discrete, 
+              overlay 0.3s allow-discrete;
+  opacity: 0;
+  transform: scale(0.95) translateY(20px);
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  transition: opacity 0.3s ease-out, display 0.3s allow-discrete, overlay 0.3s allow-discrete;
+  opacity: 0;
+}
+
+dialog[open] {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+dialog[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  dialog[open] {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog {
+    transform: none;
+    transition-duration: 0.1s;
+  }
+  @starting-style {
+    dialog[open] { transform: none; }
+  }
+}
+
+.modal-content {
+  padding: 24px;
+  text-align: left;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin: 0;
+}
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text);
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #dc2626;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+  z-index: 9999;
+  animation: slideIn 0.3s ease-out;
+}
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.form-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+.form-group label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-h);
+}
+
+/* Card quick action dropdown */
+.card-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+.card-actions select {
+  font-size: 12px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.card-lock {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #d97706;
+}

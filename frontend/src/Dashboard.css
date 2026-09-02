@@ -1,0 +1,122 @@
+/* Dashboard Styles */
+.dashboard-container {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: left;
+}
+.dashboard-title {
+  font-size: 32px;
+  margin-bottom: 24px;
+}
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+.metric-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+@media (prefers-color-scheme: dark) {
+  .metric-card {
+    background: rgba(46, 48, 58, 0.4);
+  }
+}
+.metric-title {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.metric-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+.metric-warning {
+  color: #dc2626;
+}
+@media (prefers-color-scheme: dark) {
+  .metric-warning {
+    color: #f87171;
+  }
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+@media (max-width: 768px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.chart-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+@media (prefers-color-scheme: dark) {
+  .chart-card {
+    background: rgba(46, 48, 58, 0.4);
+  }
+}
+.chart-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text-h);
+}
+
+.table-container {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+}
+@media (prefers-color-scheme: dark) {
+  .table-container {
+    background: rgba(46, 48, 58, 0.4);
+  }
+}
+.workload-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.workload-table th, .workload-table td {
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.workload-table th {
+  font-weight: 600;
+  color: var(--text-h);
+  font-size: 14px;
+}
+.workload-table td {
+  font-size: 14px;
+}
+.row-warning {
+  background: rgba(220, 38, 38, 0.05);
+}
+@media (prefers-color-scheme: dark) {
+  .row-warning {
+    background: rgba(248, 113, 113, 0.1);
+  }
+}
