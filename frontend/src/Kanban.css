@@ -1,30 +1,18 @@
 .kanban-board {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);
-}
-
-@media (prefers-color-scheme: dark) {
-  .kanban-board {
-    background: linear-gradient(135deg, #0b0f19 0%, #111827 100%);
-  }
+  height: calc(100vh - 61px);
+  background: var(--bg);
 }
 
 .kanban-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 32px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(16px);
+  padding: 16px 32px;
+  background: var(--card-bg);
   border-bottom: 1px solid var(--border);
   gap: 20px;
-}
-@media (prefers-color-scheme: dark) {
-  .kanban-header {
-    background: rgba(15, 23, 42, 0.6);
-  }
 }
 
 .kanban-header-left, .kanban-header-right {
@@ -35,18 +23,20 @@
 
 .kanban-title {
   margin: 0;
-  font-size: 24px;
+  font-size: 22px;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  color: var(--text-h);
 }
 
 .kanban-badge {
   background: var(--accent-bg);
   color: var(--accent);
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 13px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
   font-weight: 600;
   border: 1px solid var(--accent-border);
 }
@@ -56,25 +46,18 @@
   flex: 1;
   overflow-x: auto;
   padding: 24px 32px;
-  gap: 24px;
+  gap: 20px;
 }
 
 .kanban-column {
   flex: 0 0 320px;
   display: flex;
   flex-direction: column;
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(16px);
-  border-radius: 16px;
+  background: var(--card-bg);
+  border-radius: 12px;
   border: 1px solid var(--border);
   padding: 16px;
-  box-shadow: var(--shadow);
-}
-@media (prefers-color-scheme: dark) {
-  .kanban-column {
-    background: rgba(21, 28, 44, 0.5);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  }
+  box-shadow: var(--shadow-sm);
 }
 
 .kanban-column-header {
@@ -82,10 +65,13 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
   text-transform: uppercase;
-  color: var(--text-h);
+  letter-spacing: 0.04em;
+  color: var(--text);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-subtle);
 }
 
 .kanban-tasks {
@@ -94,213 +80,120 @@
   gap: 12px;
   overflow-y: auto;
   flex: 1;
+  padding-right: 4px;
 }
 
 /* Task Card */
 .task-card {
-  background: var(--bg);
+  background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   position: relative;
   text-align: left;
 }
+
 .task-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
+  border-color: var(--accent-border);
 }
+
 .task-card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 8px;
 }
+
 .task-title {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   color: var(--text-h);
   margin: 0;
   margin-bottom: 8px;
-  line-height: 1.3;
-  padding-right: 24px; /* Space for locker/actions */
+  line-height: 1.35;
+  padding-right: 24px;
 }
+
 .task-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text);
 }
+
 .task-priority {
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
-.priority-HIGH { background: #fee2e2; color: #dc2626; }
-.priority-MEDIUM { background: #fef3c7; color: #d97706; }
-.priority-LOW { background: #e0e7ff; color: #4f46e5; }
-@media (prefers-color-scheme: dark) {
-  .priority-HIGH { background: rgba(220, 38, 38, 0.2); color: #fca5a5; }
-  .priority-MEDIUM { background: rgba(217, 119, 6, 0.2); color: #fcd34d; }
-  .priority-LOW { background: rgba(79, 70, 229, 0.2); color: #a5b4fc; }
-}
+
+.priority-HIGH, .priority-URGENT { background: rgba(244, 63, 94, 0.12); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.2); }
+.priority-MEDIUM { background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.2); }
+.priority-LOW { background: rgba(79, 70, 229, 0.12); color: var(--accent); border: 1px solid var(--accent-border); }
 
 .due-date.overdue {
-  color: #dc2626;
+  color: #f43f5e;
   font-weight: 600;
 }
-@media (prefers-color-scheme: dark) {
-  .due-date.overdue { color: #fca5a5; }
-}
 
-/* UI Elements */
-.input-glass {
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 14px;
-  color: var(--text-h);
-  outline: none;
-  transition: border-color 0.2s, background 0.2s;
-}
-@media (prefers-color-scheme: dark) {
-  .input-glass {
-    background: rgba(31, 32, 40, 0.6);
-  }
-}
-.input-glass:focus {
-  border-color: var(--accent);
-  background: var(--bg);
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.btn-primary:hover { opacity: 0.9; }
-
-.btn-secondary {
-  background: var(--bg);
-  color: var(--text-h);
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-secondary:hover { background: var(--border); }
-
-/* Dialog / Modal Transitions (Modern Web Guidance) */
+/* Modal Dialog */
 dialog {
   padding: 0;
   border: none;
   border-radius: 16px;
-  background: var(--bg);
-  box-shadow: var(--shadow);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-lg);
   color: var(--text);
   max-width: 600px;
   width: 100%;
-  
-  /* Transition setup */
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
-              opacity 0.3s ease-out, 
-              display 0.3s allow-discrete, 
-              overlay 0.3s allow-discrete;
-  opacity: 0;
-  transform: scale(0.95) translateY(20px);
 }
 
 dialog::backdrop {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
-  transition: opacity 0.3s ease-out, display 0.3s allow-discrete, overlay 0.3s allow-discrete;
-  opacity: 0;
-}
-
-dialog[open] {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-}
-dialog[open]::backdrop {
-  opacity: 1;
-}
-
-@starting-style {
-  dialog[open] {
-    opacity: 0;
-    transform: scale(0.95) translateY(20px);
-  }
-  dialog[open]::backdrop {
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  dialog {
-    transform: none;
-    transition-duration: 0.1s;
-  }
-  @starting-style {
-    dialog[open] { transform: none; }
-  }
 }
 
 .modal-content {
   padding: 24px;
   text-align: left;
 }
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
+
 .modal-title {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-h);
   margin: 0;
 }
+
 .modal-close {
   background: transparent;
   border: none;
-  font-size: 24px;
+  font-size: 20px;
   cursor: pointer;
   color: var(--text);
+  border-radius: 6px;
+  padding: 4px;
 }
 
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: #dc2626;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-  z-index: 9999;
-  animation: slideIn 0.3s ease-out;
-}
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+.modal-close:hover {
+  background: var(--border-subtle);
+  color: var(--text-h);
 }
 
 .form-group {
@@ -309,10 +202,11 @@ dialog[open]::backdrop {
   flex-direction: column;
   text-align: left;
 }
+
 .form-group label {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
   color: var(--text-h);
 }
 
@@ -322,18 +216,20 @@ dialog[open]::backdrop {
   top: 12px;
   right: 12px;
 }
+
 .card-actions select {
-  font-size: 12px;
-  padding: 2px 4px;
-  border-radius: 4px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 6px;
   border: 1px solid var(--border);
-  background: var(--bg);
+  background: var(--card-bg);
   color: var(--text);
   cursor: pointer;
 }
+
 .card-lock {
   position: absolute;
   top: 12px;
   right: 12px;
-  color: #d97706;
+  color: #f59e0b;
 }

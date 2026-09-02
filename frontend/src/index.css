@@ -1,21 +1,28 @@
+/* Corporate Modern Executive Theme */
 :root {
   --text: #475569;
   --text-h: #0f172a;
   --bg: #f8fafc;
+  --card-bg: #ffffff;
   --border: #e2e8f0;
+  --border-subtle: #f1f5f9;
   --code-bg: #f1f5f9;
-  --accent: #2563eb;
-  --accent-bg: rgba(37, 99, 235, 0.08);
-  --accent-border: rgba(37, 99, 235, 0.25);
-  --social-bg: rgba(255, 255, 255, 0.85);
-  --shadow:
-    0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+  
+  --accent: #4f46e5; /* Corporate Indigo */
+  --accent-hover: #4338ca;
+  --accent-bg: rgba(79, 70, 229, 0.08);
+  --accent-border: rgba(79, 70, 229, 0.2);
+  
+  --social-bg: rgba(255, 255, 255, 0.9);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
 
-  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --heading: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --heading: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, SFMono-Regular, monospace;
 
-  font: 18px/145% var(--sans);
+  font: 15px/1.5 var(--sans);
   letter-spacing: -0.01em;
   color-scheme: light dark;
   color: var(--text);
@@ -24,88 +31,194 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --text: #94a3b8;
     --text-h: #f8fafc;
-    --bg: #0b0f19;
-    --border: rgba(255, 255, 255, 0.08);
-    --code-bg: #151c2c;
-    --accent: #38bdf8;
-    --accent-bg: rgba(56, 189, 248, 0.12);
-    --accent-border: rgba(56, 189, 248, 0.3);
-    --social-bg: rgba(21, 28, 44, 0.75);
-    --shadow:
-      0 12px 30px -4px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --border: #334155;
+    --border-subtle: #1e293b;
+    --code-bg: #1e293b;
+    
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --accent-bg: rgba(99, 102, 241, 0.12);
+    --accent-border: rgba(99, 102, 241, 0.3);
+    
+    --social-bg: rgba(30, 41, 59, 0.85);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 12px 30px -4px rgba(0, 0, 0, 0.5), 0 4px 12px -2px rgba(0, 0, 0, 0.3);
   }
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
 }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
 }
 
-h1,
-h2 {
+h1, h2, h3, h4, h5, h6 {
   font-family: var(--heading);
-  font-weight: 500;
   color: var(--text-h);
+  margin: 0;
+  letter-spacing: -0.02em;
 }
 
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
+  font-size: 28px;
+  font-weight: 700;
 }
+
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+  font-size: 22px;
+  font-weight: 600;
 }
+
+h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
 p {
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
+/* Global Form Elements */
+.input-glass {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
   color: var(--text-h);
+  font-family: var(--sans);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.input-glass:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  background: var(--card-bg);
+  color: var(--text-h);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--border-subtle);
+  border-color: var(--border);
+}
+
+/* Badges */
+.kanban-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+
+/* Table Utilities */
+.table-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+/* Dialog & Modal */
+dialog {
+  border: none;
+  border-radius: 16px;
+  background: var(--card-bg);
+  color: var(--text-h);
+  box-shadow: var(--shadow-lg);
+  padding: 0;
+}
+
+.modal-content {
+  padding: 24px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.modal-close:hover {
+  background: var(--border-subtle);
+  color: var(--text-h);
 }

@@ -163,7 +163,7 @@ export default function TaskSearch() {
   };
 
   return (
-    <div className="dashboard-container" style={{ maxWidth: '1200px' }}>
+    <div className="dashboard-container" style={{ maxWidth: '1240px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h1 className="dashboard-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Search size={32} color="var(--accent)" /> Global Task Finder

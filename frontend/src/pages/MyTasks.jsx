@@ -31,7 +31,7 @@ export default function MyTasks() {
   if (loading) return <div style={{ padding: '40px' }}>Loading your tasks...</div>;
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container" style={{ maxWidth: '1240px' }}>
       <h1 className="dashboard-title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
         <CheckCircle size={32} color="var(--accent)" /> My Tasks
       </h1>

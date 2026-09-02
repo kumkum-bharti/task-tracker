@@ -85,7 +85,7 @@ export default function ProjectsList() {
   if (loading) return <div style={{ padding: '40px' }}>Loading projects...</div>;
 
   return (
-    <div className="dashboard-container" style={{ maxWidth: '1000px' }}>
+    <div className="dashboard-container" style={{ maxWidth: '1240px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <h1 className="dashboard-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Folder size={32} color="var(--accent)" /> Projects Directory
