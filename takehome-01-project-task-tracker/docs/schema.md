@@ -116,3 +116,75 @@
 2. **Global Task Search Count (`prisma.task.count`)**:
    - Running `count()` queries on non-indexed text searches across millions of rows on every search request will become heavy.
    - **Fix**: Implement PostgreSQL Full-Text Search (`tsvector` index) or Elasticsearch/Meilisearch.
+3. **`TaskBlocker` Cycle Queries**:
+   - The current blocker check is a single-hop check (does this task have unfinished blockers?). At 100x scale with deep dependency chains, cycle detection would require a recursive CTE query (`WITH RECURSIVE`), which on millions of rows without path-length limits could run indefinitely.
+   - **Fix**: Limit dependency depth (e.g., max 5 hops) or implement topological sort at write time.
+4. **`ProjectMember` Cascade Unassignment**:
+   - When a member is removed from a project, all of their task assignments in that project are deleted via a looped Prisma `deleteMany`. At 100x scale with hundreds of tasks per project, this N+1 unassignment loop would cause latency spikes.
+   - **Fix**: A single `DELETE FROM TaskAssignee WHERE userId = ? AND taskId IN (SELECT id FROM Task WHERE projectId = ?)` batch query.
+
+---
+
+### Entity-Relationship Diagram (Conceptual)
+
+```
+User ──────────────────────────────────────────────────────────────────┐
+ │ (ownerId)                                                            │
+ │  1                                                                   │
+ │  ↓  many                                                             │
+Project ──── (many-to-many via ProjectMember) ──── User               │
+ │                                                                      │
+ │  1                                                                   │
+ │  ↓  many                                                             │
+Task ─────── (many-to-many via TaskAssignee) ──── User                 │
+ │                                                                      │
+ │  (self-referential many-to-many via TaskBlocker)                     │
+ │  Task ←── blocks ──→ Task                                            │
+ │                                                                      │
+ │  1                                                                   │
+ │  ↓  many (append-only, never updated or deleted)                     │
+TaskEvent ── actorId ──── User                                          │
+                                                                        │
+AlertDismissal ── taskId ──→ Task                                       │
+               └─ userId ──→ User                                       │
+```
+
+---
+
+### Index Strategy
+
+The following indexes are explicitly defined in `schema.prisma` via `@@index` directives:
+
+| Table | Indexed Column(s) | Reason |
+|:------|:-----------------|:-------|
+| `Project` | `ownerId` | Fast lookup of all projects owned by a manager. |
+| `Task` | `projectId` | Core join on every project board fetch. |
+| `Task` | `createdById` | Filtered task lookup by creator. |
+| `Task` | `status` | Global task search filters heavily on status. |
+| `TaskEvent` | `taskId` | Timeline query for a given task. |
+| `TaskEvent` | `actorId` | Audit queries by user. |
+
+**Uniqueness constraints** double as implicit indexes:
+- `User.email` — prevents duplicate registrations and is used in login lookup.
+- `Project.key` — prevents duplicate project keys (used as a short identifier in the UI).
+- `AlertDismissal(taskId, userId)` — prevents a user dismissing the same task alert twice; enforces idempotent upsert behaviour.
+
+---
+
+### Why `blockedFrom` Is On `Task` Rather Than Derived From `TaskEvent`
+
+This is the most important deliberate denormalization in the schema, worth explaining in depth.
+
+**The alternative** (normalized approach): When a task is blocked, write a `TaskEvent` with `eventType: 'STATUS_CHANGED'`, `oldValue: 'IN_PROGRESS'`, `newValue: 'BLOCKED'`. When unblocking, query the most recent `STATUS_CHANGED` event with `newValue = 'BLOCKED'` to recover the `oldValue` (which was the state before blocking).
+
+**Why this was rejected**: The unblock operation would require a subquery like:
+```sql
+SELECT oldValue FROM TaskEvent
+WHERE taskId = ? AND eventType = 'STATUS_CHANGED' AND newValue = 'BLOCKED'
+ORDER BY createdAt DESC LIMIT 1;
+```
+This query runs on every unblock, and if the task's timeline is long (many edits), it scans many rows. More critically, the logic is implicit — the state machine cannot be understood by reading the Task row alone. A reviewer reading the code would need to trace through `TaskEvent` history to understand where an unblock lands.
+
+**The chosen approach**: Store `blockedFrom: TaskStatus?` directly on the `Task` row. It is set when transitioning to `BLOCKED` and cleared when transitioning away from `BLOCKED`. The state machine reads `task.blockedFrom` in a single column access. It is O(1), self-documenting, and testable without a database.
+
+The trade-off is a tiny redundancy: `blockedFrom` is derivable from `TaskEvent` history. We accepted this because the gain in performance, readability, and testability vastly outweighs the minor normalization violation for a field that only holds two possible non-null values.
