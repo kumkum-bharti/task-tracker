@@ -13,11 +13,12 @@ The database is hosted on Supabase (PostgreSQL, AWS ap-northeast-1 region). It i
 
 ## Demo credentials
 
-| Role    | Email                    | Password     |
-|---------|--------------------------|--------------|
-| Manager | manager@busytracker.com  | manager123   |
-| Member  | alice@busytracker.com    | member123    |
-| Member  | bob@busytracker.com      | member123    |
+| Role    | Email              | Password     |
+|---------|--------------------|--------------|
+| Manager | manager@test.com   | password123  |
+| Member  | kumkum@test.com    | kum          |
+| Member  | member2@test.com   | passwordcode |
+| Member  | member3@test.com   | password123  |
 
 The Manager account can create/archive projects, manage members, and delete tasks. Member accounts can only see projects they are assigned to and manage their own tasks.
 
